@@ -55,6 +55,7 @@ if __name__ == "__main__":
 
     # Initialize agent + logger
     agent = SAC(p_z=p_z, **params)
+    print("device = ", agent.device)
     logger = Logger(agent, **params)
 
     if params["do_train"]:
