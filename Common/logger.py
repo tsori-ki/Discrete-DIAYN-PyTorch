@@ -1,5 +1,4 @@
 import time
-import numpy as np
 import psutil
 from torch.utils.tensorboard import SummaryWriter
 import torch

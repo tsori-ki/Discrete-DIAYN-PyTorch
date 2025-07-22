@@ -1,5 +1,5 @@
 import numpy as np
-from Brain.model import PolicyNetwork, QValueNetwork
+from Brain.model import PolicyNetwork, QValueNetwork, ValueNetwork
 import torch
 from Brain.replay_memory import Memory, Transition
 from torch import from_numpy
@@ -32,6 +32,12 @@ class SAC:
 
         self.q_value_target_network2.load_state_dict(self.q_value_network2.state_dict())
         self.q_value_target_network2.eval()
+
+        self.value_network = ValueNetwork(n_states=self.config["n_states"]).to(self.device)
+        self.value_target_network = ValueNetwork(n_states=self.config["n_states"]).to(self.device)
+
+        self.value_target_network.load_state_dict(self.value_network.state_dict())
+        self.value_target_network.eval()
 
         self.entropy_target = 0.98 * (-np.log(1 / self.n_actions))
         self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
