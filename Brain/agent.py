@@ -1,5 +1,5 @@
 import numpy as np
-from Brain.model import PolicyNetwork, QValueNetwork, ValueNetwork
+from Brain.model import PolicyNetwork, QValueNetwork, ValueNetwork, Discriminator
 import torch
 from Brain.replay_memory import Memory, Transition
 from torch import from_numpy
