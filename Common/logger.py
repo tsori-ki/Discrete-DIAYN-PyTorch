@@ -5,6 +5,7 @@ import torch
 import os
 import datetime
 import glob
+import numpy as np
 
 
 class Logger:
