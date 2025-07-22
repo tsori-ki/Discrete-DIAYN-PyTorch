@@ -1,32 +1,23 @@
 import random
 from collections import namedtuple
 
-Transition = namedtuple('Transition', ('state', 'z', 'done', 'action', 'next_state'))
+Transition = namedtuple('Transition',
+                        ('state', 'reward', 'done', 'action', 'next_state'))
 
 
 class Memory:
-    def __init__(self, buffer_size, seed):
-        self.buffer_size = buffer_size
-        self.buffer = []
-        self.seed = seed
-        random.seed(self.seed)
+    def __init__(self, memory_size):
+        self.memory_size = memory_size
+        self.memory = []
 
     def add(self, *transition):
-        self.buffer.append(Transition(*transition))
-        if len(self.buffer) > self.buffer_size:
-            self.buffer.pop(0)
-        assert len(self.buffer) <= self.buffer_size
+        self.memory.append(Transition(*transition))
+        if len(self.memory) > self.memory_size:
+            self.memory.pop(0)
+        assert len(self.memory) <= self.memory_size
 
     def sample(self, size):
-        return random.sample(self.buffer, size)
+        return random.sample(self.memory, size)
 
     def __len__(self):
-        return len(self.buffer)
-
-    @staticmethod
-    def get_rng_state():
-        return random.getstate()
-
-    @staticmethod
-    def set_rng_state(random_rng_state):
-        random.setstate(random_rng_state)
+        return len(self.memory)
