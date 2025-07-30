@@ -59,69 +59,47 @@ class ValueNetwork(nn.Module, ABC):
 
 
 class QvalueNetwork(nn.Module, ABC):
+    """
+    Q(s,a,z) – returns a vector with |A| elements.
+    """
     def __init__(self, n_states, n_actions, n_hidden_filters=256):
-        super(QvalueNetwork, self).__init__()
-        self.n_states = n_states
-        self.n_hidden_filters = n_hidden_filters
-        self.n_actions = n_actions
+        super().__init__()
+        self.h1 = nn.Linear(n_states, n_hidden_filters); init_weight(self.h1)
+        self.h2 = nn.Linear(n_hidden_filters, n_hidden_filters); init_weight(self.h2)
+        self.q  = nn.Linear(n_hidden_filters, n_actions)
+        init_weight(self.q, initializer="xavier uniform")
 
-        self.hidden1 = nn.Linear(in_features=self.n_states + self.n_actions, out_features=self.n_hidden_filters)
-        init_weight(self.hidden1)
-        self.hidden1.bias.data.zero_()
-        self.hidden2 = nn.Linear(in_features=self.n_hidden_filters, out_features=self.n_hidden_filters)
-        init_weight(self.hidden2)
-        self.hidden2.bias.data.zero_()
-        self.q_value = nn.Linear(in_features=self.n_hidden_filters, out_features=1)
-        init_weight(self.q_value, initializer="xavier uniform")
-        self.q_value.bias.data.zero_()
-
-    def forward(self, states, actions):
-        x = torch.cat([states, actions], dim=1)
-        x = F.relu(self.hidden1(x))
-        x = F.relu(self.hidden2(x))
-        return self.q_value(x)
+    def forward(self, s):
+        x = F.relu(self.h1(s))
+        x = F.relu(self.h2(x))
+        return self.q(x)                          #  shape (B, |A|)
 
 
 class PolicyNetwork(nn.Module, ABC):
-    def __init__(self, n_states, n_actions, action_bounds, n_hidden_filters=256):
-        super(PolicyNetwork, self).__init__()
-        self.n_states = n_states
-        self.n_hidden_filters = n_hidden_filters
-        self.n_actions = n_actions
-        self.action_bounds = action_bounds
+    """
+    Stochastic policy π(a|s,z)  ——  discrete actions
+    """
+    def __init__(self, n_states, n_actions, n_hidden_filters=256):
+        super().__init__()
+        self.n_states   = n_states
+        self.n_actions  = n_actions
+        self.n_hid      = n_hidden_filters
 
-        self.hidden1 = nn.Linear(in_features=self.n_states, out_features=self.n_hidden_filters)
-        init_weight(self.hidden1)
-        self.hidden1.bias.data.zero_()
-        self.hidden2 = nn.Linear(in_features=self.n_hidden_filters, out_features=self.n_hidden_filters)
-        init_weight(self.hidden2)
-        self.hidden2.bias.data.zero_()
+        self.h1 = nn.Linear(n_states,      n_hidden_filters); init_weight(self.h1)
+        self.h2 = nn.Linear(n_hidden_filters, n_hidden_filters); init_weight(self.h2)
+        self.logits = nn.Linear(n_hidden_filters, n_actions)
+        init_weight(self.logits, initializer="xavier uniform")
 
-        self.mu = nn.Linear(in_features=self.n_hidden_filters, out_features=self.n_actions)
-        init_weight(self.mu, initializer="xavier uniform")
-        self.mu.bias.data.zero_()
+    def forward(self, s):
+        x = F.relu(self.h1(s))
+        x = F.relu(self.h2(x))
+        logits = self.logits(x)
+        probs  = F.softmax(logits, dim=-1)             # π(a|s)
+        log_p  = F.log_softmax(logits, dim=-1)
+        return probs, log_p
 
-        self.log_std = nn.Linear(in_features=self.n_hidden_filters, out_features=self.n_actions)
-        init_weight(self.log_std, initializer="xavier uniform")
-        self.log_std.bias.data.zero_()
-
-    def forward(self, states):
-        x = F.relu(self.hidden1(states))
-        x = F.relu(self.hidden2(x))
-
-        mu = self.mu(x)
-        log_std = self.log_std(x)
-        std = log_std.clamp(min=-20, max=2).exp()
-        dist = Normal(mu, std)
-        return dist
-
-    def sample_or_likelihood(self, states):
-        dist = self(states)
-        # Reparameterization trick
-        u = dist.rsample()
-        action = torch.tanh(u)
-        log_prob = dist.log_prob(value=u)
-        # Enforcing action bounds
-        log_prob -= torch.log(1 - action ** 2 + 1e-6)
-        log_prob = log_prob.sum(-1, keepdim=True)
-        return (action * self.action_bounds[1]).clamp_(self.action_bounds[0], self.action_bounds[1]), log_prob
+    def sample(self, s, greedy=False):
+        probs, log_p = self.forward(s)
+        dist  = torch.distributions.Categorical(probs)
+        a_idx = probs.argmax(-1) if greedy else dist.sample()
+        return a_idx, log_p.gather(-1, a_idx.unsqueeze(-1))   # log π(a|s)
