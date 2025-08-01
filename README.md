@@ -26,11 +26,11 @@ where $z$ is the latent skill. The intrinsic reward encourages states that help 
 
 ## Features
 
-* 🧠 Skill discovery in **discrete action** environments
-* 🎮 Based on PyTorch & OpenAI Gym
-* 🧪 Compatible with simple control environments (e.g., `Acrobot`, `CartPole`)
-* 🧩 Modular design (agent, logger, networks)
-* 💾 Checkpointing + RNG state saving
+* Skill discovery in **discrete action** environments
+* Based on PyTorch & OpenAI Gym
+* Compatible with simple control environments (e.g., `Acrobot`, `CartPole`)
+* Modular design (agent, logger, networks)
+* Checkpointing + RNG state saving
 
 ---
 
@@ -137,7 +137,3 @@ Thanks to the original authors and contributors:
 * [@p-christ](https://github.com/p-christ)
 * [@Dolokhow](https://github.com/Dolokhow)
 * [@alirezakazemipour](https://github.com/alirezakazemipour)
-
----
-
-### PRs welcome! Let's make skill learning in discrete domains stronger together!
